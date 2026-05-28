@@ -1,0 +1,77 @@
+import {
+    AboutSlint,
+    VerticalBox,
+    HorizontalBox,
+    ScrollView,
+} from "std-widgets.slint";
+
+export component PageAbout inherits VerticalLayout {
+    padding: 10px;
+    spacing: 10px;
+    ScrollView {
+
+        HorizontalBox {
+            alignment: LayoutAlignment.center;
+            VerticalBox {
+                alignment: LayoutAlignment.center;
+
+                Text {
+                    vertical-alignment: TextVerticalAlignment.center;
+                    horizontal-alignment: TextHorizontalAlignment.center;
+                    text: "ROG Control Center";
+                    font-size: 22px;
+                }
+
+                Text {
+                    wrap: TextWrap.word-wrap;
+                    text: "\nA powerful graphical interface for managing ASUS ROG, TUF, and ProArt laptops on Linux. It acts as the official GUI for the asusctl toolset, allowing for seamless hardware tuning without the command line.";
+                }
+
+                Text {
+                    font-weight: 900;
+                    text: "Key Features:";
+                }
+
+                Text {
+                    text: "      • Performance: Switch power profiles and customize fan curves.\n      • Aura Sync: Control keyboard backlighting and LED effects.\n      • Battery Health: Set charge limits to extend battery longevity.\n      • Display: Toggle Panel Overdrive and refresh rates.\n      • AniMe Matrix: Control AniMe Matrix displays.";
+                }
+
+                Text {
+                    font-weight: 900;
+                    text: "Requirements:";
+                }
+
+                Text {
+                    text: "      • This software requires kernel version 6.19.";
+                }
+
+                Text {
+                    font-weight: 900;
+                    text: "Work in progress:";
+                }
+
+                Text {
+                    text: "      • Theme the widgets\n      • Add a cpu/gpu temp/fan speed info bar\n      • Include fan speeds, temps in a bottom bar\n      • Slash control\n      • Screenpad controls\n      • ROG Ally specific settings";
+                }
+
+                Text {
+                    font-weight: 900;
+                    text: "License:";
+                }
+
+                Text {
+                    text: "      This project is open-source software licensed under the Mozilla Public License 2.0 (MPL-2.0).";
+                }
+
+                Text {
+                    font-weight: 900;
+                    text: "Links:";
+                }
+
+                Text {
+                    text: "      Source Code: https://gitlab.com/asus-linux/asusctl\n      Website: https://asus-linux.org/";
+                }
+            }
+        }
+    }
+}

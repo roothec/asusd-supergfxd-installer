@@ -1,0 +1,64 @@
+[package]
+name = "supergfxctl"
+version = "5.2.7"
+license = "MPL-2.0"
+readme = "README.md"
+authors = ["Luke <luke@ljones.dev>"]
+repository = "https://gitlab.com/asus-linux/asusctl"
+homepage = "https://gitlab.com/asus-linux/asusctl"
+documentation = "https://docs.rs/rog-anime"
+description = "Types useful for fancy keyboards on ASUS ROG laptops"
+keywords = ["graphics", "nvidia", "switching"]
+edition = "2021"
+rust-version = "1.64"
+exclude = ["data"]
+
+[features]
+default = ["daemon", "cli", "zbus_tokio"]
+daemon = ["env_logger"]
+cli = ["gumdrop"]
+zbus_tokio = ["zbus/tokio"]
+
+[lib]
+name = "supergfxctl"
+path = "src/lib.rs"
+
+[[bin]]
+name = "supergfxd"
+path = "src/daemon.rs"
+required-features = ["daemon"]
+
+[[bin]]
+name = "supergfxctl"
+path = "src/cli.rs"
+required-features = ["cli"]
+
+[dependencies]
+udev = "~0.9.0"
+serde = "^1.0"
+serde_derive = "^1.0"
+serde_json = "^1.0"
+log = "^0.4"
+
+futures-util = "0.3.31"
+zbus = { version = "5.5.0" }
+logind-zbus = { version = "5.2.0" }
+tokio = { version = "^1.21.2", features = ["macros", "rt-multi-thread", "time"]}
+
+env_logger = { version = "~0.11.0", optional = true }
+gumdrop = { version = "^0.8", optional = true }
+
+[profile.release]
+lto = true
+strip = true
+debug = false
+opt-level = 3
+panic = "abort"
+
+[profile.dev]
+debug = false
+opt-level = 1
+
+[profile.bench]
+debug = false
+opt-level = 3

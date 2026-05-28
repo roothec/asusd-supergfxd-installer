@@ -1,0 +1,101 @@
+[workspace.package]
+version = "6.3.7"
+rust-version = "1.82"
+license = "MPL-2.0"
+readme = "README.md"
+authors = [
+  "Luke <luke@ljones.dev>",
+  "Denis Benato <benato.denis96@gmail.com>"
+]
+repository = "https://gitlab.com/asus-linux/asusctl"
+homepage = "https://gitlab.com/asus-linux/asusctl"
+description = "Laptop feature control for ASUS ROG laptops and others"
+edition = "2021"
+
+[workspace]
+resolver = "2"
+members = [
+  "asusctl",
+  "asusd",
+  "asus-shutdown",
+  "asusd-user",
+  "config-traits",
+  "dmi-id",
+  "rog-platform",
+  "rog-dbus",
+  "rog-anime",
+  "rog-aura",
+  "rog-profiles",
+  "rog-control-center",
+  "rog-slash",
+  "simulators",
+  "rog-scsi",
+]
+
+default-members = ["asusctl", "asusd", "asus-shutdown", "asusd-user", "rog-control-center"]
+
+[workspace.dependencies]
+tokio = { version = "^1.39.0", default-features = false, features = [
+  "macros",
+  "sync",
+  "time",
+  "rt",
+  "rt-multi-thread",
+] }
+concat-idents = "^1.1"
+dirs = "^4.0"
+smol = "^2.0"
+mio = "0.8.11"
+
+futures-util = "0.3.31"
+zbus = "5.13.1"
+logind-zbus = { version = "5.2.0" } #, default-features = false, features = ["non_blocking"] }
+
+serde = { version = "^1.0", features = ["serde_derive"] }
+ron = "*"
+
+log = "^0.4"
+env_logger = "^0.10.0"
+
+glam = { version = "^0.22", features = ["serde"] }
+gumdrop = "^0.8"
+udev = { version = "^0.8", features = ["mio"] }
+rusb = "^0.9"
+inotify = "^0.10"
+
+png_pong = "^0.8"
+pix = "^0.13"
+tinybmp = "^0.4"
+gif = "^0.12"
+
+versions = "6.2"
+
+notify-rust = { version = "4.11.5", features = ["z", "async"] }
+
+sg = { git = "https://github.com/flukejones/sg-rs.git" }
+
+[profile.release]
+# thin = 57s, asusd = 9.0M
+# fat = 72s, asusd = 6.4M
+lto = "fat"
+debug = false
+opt-level = 3
+panic = "abort"
+# codegen-units = 1
+
+[profile.dev]
+opt-level = 1
+# codegen-units = 1
+
+[profile.dev.package."*"]
+opt-level = 1
+# codegen-units = 1
+
+[profile.bench]
+debug = false
+opt-level = 3
+
+[workspace.dependencies.cargo-husky]
+version = "1"
+default-features = false
+features = ["user-hooks"]
