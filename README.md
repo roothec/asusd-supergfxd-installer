@@ -1,5 +1,16 @@
 # asusd-supergfxd-installer
 
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
+![Platform](https://img.shields.io/badge/platform-Linux-yellow?logo=linux&logoColor=white)
+![Arch](https://img.shields.io/badge/arch-x86__64-lightgrey)
+![Rust](https://img.shields.io/badge/built_with-Rust-orange?logo=rust&logoColor=white)
+![Bash](https://img.shields.io/badge/installer-Bash-4EAA25?logo=gnubash&logoColor=white)
+![Debian](https://img.shields.io/badge/Debian-12+-A81D33?logo=debian&logoColor=white)
+![Ubuntu](https://img.shields.io/badge/Ubuntu-22.04+-E95420?logo=ubuntu&logoColor=white)
+![systemd](https://img.shields.io/badge/init-systemd-black?logo=systemd&logoColor=white)
+![NVIDIA](https://img.shields.io/badge/GPU-NVIDIA-76B900?logo=nvidia&logoColor=white)
+![ASUS ROG](https://img.shields.io/badge/ASUS-ROG%20%7C%20TUF-CC0000?logo=asus&logoColor=white)
+
 Instalador de binarios precompilados para **asusd** y **supergfxd** en laptops ASUS gaming con Linux (Ubuntu/Debian).
 
 Un solo script instala los daemons, servicios systemd, reglas udev, permisos D-Bus y la GUI ROG Control Center — sin necesidad de compilar ni añadir PPAs externos.
@@ -20,6 +31,27 @@ Un solo script instala los daemons, servicios systemd, reglas udev, permisos D-B
 
 **Compilado en:** ASUS TUF F16 (FX607VJ), Intel Core 5 210H, Ubuntu 26.04 LTS, kernel 7.0.0-15-generic, x86\_64
 **Compatibilidad:** cualquier x86\_64 con Ubuntu 22.04+ / Debian 12+
+
+---
+
+## Compatibilidad
+
+Los binarios son ejecutables ELF x86_64 compilados desde código Rust. Funcionan en **cualquier distribución Linux x86_64 con systemd y glibc compatible** — no son exclusivos de Debian/Ubuntu.
+
+| Distribución | Compatible | Notas |
+|---|---|---|
+| Ubuntu 22.04 / 24.04 / 26.04 | ✓ | probado |
+| Kubuntu / Pop!\_OS / Mint / Zorin | ✓ | basadas en Ubuntu |
+| Debian 12+ | ✓ | compatible |
+| Fedora 40+ | ✓ | glibc reciente |
+| Arch / Manjaro / EndeavourOS | ✓ | rolling, siempre actualizado |
+| openSUSE Tumbleweed | ✓ | rolling |
+| openSUSE Leap | depende | verificar versión de glibc |
+| ARM64 (Raspberry Pi, Mac M1) | ✗ | arquitectura diferente |
+
+> **Nota:** Las instrucciones de dependencias usan `apt` (Debian/Ubuntu). En otras distros sustituir por el gestor de paquetes correspondiente: `dnf` en Fedora, `pacman` en Arch, `zypper` en openSUSE.
+
+Si los binarios no arrancan en tu sistema, compílalos directamente desde `build/` — ver sección **Recompilar desde fuente**.
 
 ---
 
@@ -220,3 +252,32 @@ exit && sudo reboot
 
 `asusd` se activa por udev al detectar hardware ASUS — no necesita `enable`.
 `supergfxd` sí necesita estar habilitado: `sudo systemctl enable supergfxd.service`
+
+---
+
+## Capturas de pantalla
+
+| System Control | Keyboard Aura |
+|---|---|
+| ![System Control](screenshots/01-system-control.png) | ![Keyboard Aura](screenshots/02-keyboard-aura.png) |
+
+| Fan Curves | GPU Configuration |
+|---|---|
+| ![Fan Curves](screenshots/03-fan-curves.png) | ![GPU Configuration](screenshots/04-gpu-configuration.png) |
+
+![App Settings](screenshots/05-app-settings.png)
+
+---
+
+## Licencia
+
+MIT License — Copyright (c) 2026 **roothec**
+
+Ver [LICENSE](LICENSE) para el texto completo.
+
+---
+
+## Autor
+
+Creado por **[roothec](https://github.com/roothec)**
+Compilado y probado en ASUS TUF Gaming F16 (FX607VJ) — Ubuntu 26.04 LTS, kernel 7.0.0-15-generic.
