@@ -42,6 +42,9 @@ sudo find "$DIR/datos/anime" -type f -exec bash -c \
 # ROG Control Center
 echo "[5/6] Instalando ROG Control Center..."
 sudo install -D -m 0755 "$DIR/binarios/rog-control-center" /usr/bin/rog-control-center
+sudo install -D -m 0644 "$DIR/build/asusctl/rog-control-center/data/rog-control-center.png" \
+    /usr/share/icons/hicolor/512x512/apps/rog-control-center.png
+sudo gtk-update-icon-cache -f /usr/share/icons/hicolor 2>/dev/null || true
 sudo install -d -m 0755 /usr/share/applications
 sudo tee /usr/share/applications/rog-control-center.desktop >/dev/null <<'EOF'
 [Desktop Entry]
@@ -49,7 +52,7 @@ Type=Application
 Name=ROG Control Center
 Comment=ASUS ROG laptop control panel
 Exec=rog-control-center
-Icon=input-gaming
+Icon=rog-control-center
 Categories=Settings;HardwareSettings;
 Keywords=asus;rog;tuf;gaming;gpu;aura;rgb;fan;battery;
 StartupNotify=true

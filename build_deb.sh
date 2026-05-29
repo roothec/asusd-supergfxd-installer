@@ -22,6 +22,7 @@ mkdir -p "$BUILD/usr/share/dbus-1/system.d"
 mkdir -p "$BUILD/usr/share/X11/xorg.conf.d"
 mkdir -p "$BUILD/usr/share/asusd"
 mkdir -p "$BUILD/usr/share/applications"
+mkdir -p "$BUILD/usr/share/icons/hicolor/512x512/apps"
 
 # ── Binarios ──────────────────────────────────────────────────────────────────
 echo "[1/6] Copiando binarios..."
@@ -52,15 +53,17 @@ echo "[4/6] Copiando datos de aplicación..."
 install -m 0644 "$DIR/datos/aura_support.ron" "$BUILD/usr/share/asusd/aura_support.ron"
 cp -r "$DIR/datos/anime" "$BUILD/usr/share/asusd/anime"
 
-# ── ROG Control Center desktop entry ─────────────────────────────────────────
-echo "[5/6] Creando entrada .desktop..."
+# ── ROG Control Center desktop entry e icono ─────────────────────────────────
+echo "[5/6] Creando entrada .desktop e instalando icono..."
+install -m 0644 "$DIR/build/asusctl/rog-control-center/data/rog-control-center.png" \
+    "$BUILD/usr/share/icons/hicolor/512x512/apps/rog-control-center.png"
 cat > "$BUILD/usr/share/applications/rog-control-center.desktop" <<'EOF'
 [Desktop Entry]
 Type=Application
 Name=ROG Control Center
 Comment=ASUS ROG laptop control panel
 Exec=rog-control-center
-Icon=input-gaming
+Icon=rog-control-center
 Categories=Settings;HardwareSettings;
 Keywords=asus;rog;tuf;gaming;gpu;aura;rgb;fan;battery;
 StartupNotify=true
@@ -89,6 +92,7 @@ systemctl daemon-reload
 systemctl enable --now supergfxd.service
 systemctl start asusd.service || true
 udevadm control --reload-rules
+gtk-update-icon-cache -f /usr/share/icons/hicolor 2>/dev/null || true
 EOF
 chmod 0755 "$BUILD/DEBIAN/postinst"
 
