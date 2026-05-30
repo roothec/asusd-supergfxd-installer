@@ -22,6 +22,7 @@ mkdir -p "$BUILD/usr/share/dbus-1/system.d"
 mkdir -p "$BUILD/usr/share/X11/xorg.conf.d"
 mkdir -p "$BUILD/usr/share/asusd"
 mkdir -p "$BUILD/usr/share/asusd-supergfxd-installer"
+mkdir -p "$BUILD/usr/local/bin"
 mkdir -p "$BUILD/usr/share/applications"
 mkdir -p "$BUILD/usr/share/icons/hicolor/512x512/apps"
 
@@ -72,6 +73,21 @@ Keywords=asus;rog;tuf;gaming;gpu;aura;rgb;fan;battery;
 StartupNotify=true
 EOF
 
+# ── GPU Mode Selector (script + .desktop; el sudoers lo crea el postinst) ──────
+echo "[5b/6] Empaquetando GPU Mode Selector..."
+install -m 0755 "$DIR/gpu-mode.sh" "$BUILD/usr/local/bin/gpu-mode.sh"
+cat > "$BUILD/usr/share/applications/gpu-mode.desktop" <<'EOF'
+[Desktop Entry]
+Name=GPU Mode Selector
+Comment=Cambia el modo GPU (Integrated / Hybrid / AsusMuxDgpu)
+Exec=ptyxis -- bash -c "sudo /usr/local/bin/gpu-mode.sh; echo; read -rp 'Presiona Enter para cerrar...' _"
+Icon=nvidia
+Terminal=false
+Type=Application
+Categories=System;Settings;
+Keywords=gpu;nvidia;asus;supergfx;
+EOF
+
 # ── DEBIAN/control ────────────────────────────────────────────────────────────
 echo "[6/6] Generando metadatos del paquete..."
 cat > "$BUILD/DEBIAN/control" <<EOF
@@ -117,6 +133,15 @@ PY
     fi
 fi
 
+# ── GPU Mode Selector: regla sudoers NOPASSWD para el usuario de escritorio ──────
+# $SUDO_USER no es fiable durante apt install; caemos al primer usuario UID 1000.
+GPU_USER="${SUDO_USER:-}"
+[ -z "$GPU_USER" ] && GPU_USER="$(getent passwd 1000 | cut -d: -f1)"
+if [ -n "$GPU_USER" ]; then
+    echo "$GPU_USER ALL=(ALL) NOPASSWD: /usr/local/bin/gpu-mode.sh" > /etc/sudoers.d/gpu-mode
+    chmod 0440 /etc/sudoers.d/gpu-mode
+fi
+
 systemctl daemon-reload
 # Limpia el limitador de reinicios (evita "Start request repeated too quickly" en reinstalaciones)
 systemctl reset-failed supergfxd.service asusd.service 2>/dev/null || true
@@ -137,6 +162,15 @@ systemctl stop asusd.service supergfxd.service --timeout=3 2>/dev/null || true
 systemctl disable supergfxd.service 2>/dev/null || true
 EOF
 chmod 0755 "$BUILD/DEBIAN/prerm"
+
+# ── DEBIAN/postrm ─────────────────────────────────────────────────────────────
+# Limpia el sudoers creado por el postinst (dpkg no lo borra porque no se empaqueta).
+cat > "$BUILD/DEBIAN/postrm" <<'EOF'
+#!/bin/bash
+set -e
+rm -f /etc/sudoers.d/gpu-mode
+EOF
+chmod 0755 "$BUILD/DEBIAN/postrm"
 
 # ── Construir .deb ────────────────────────────────────────────────────────────
 dpkg-deb --build --root-owner-group "$BUILD" "$DIR/${PKG}_${VERSION}_${ARCH}.deb"
