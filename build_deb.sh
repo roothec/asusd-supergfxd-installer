@@ -21,6 +21,7 @@ mkdir -p "$BUILD/usr/lib/udev/rules.d"
 mkdir -p "$BUILD/usr/share/dbus-1/system.d"
 mkdir -p "$BUILD/usr/share/X11/xorg.conf.d"
 mkdir -p "$BUILD/usr/share/asusd"
+mkdir -p "$BUILD/usr/share/asusd-supergfxd-installer"
 mkdir -p "$BUILD/usr/share/applications"
 mkdir -p "$BUILD/usr/share/icons/hicolor/512x512/apps"
 
@@ -47,6 +48,8 @@ install -m 0644 "$DIR/configs/org.supergfxctl.Daemon.conf"  "$BUILD/usr/share/db
 install -m 0644 "$DIR/configs/asusd.rules"                  "$BUILD/usr/lib/udev/rules.d/99-asusd.rules"
 install -m 0644 "$DIR/configs/90-supergfxd-nvidia-pm.rules" "$BUILD/usr/lib/udev/rules.d/90-supergfxd-nvidia-pm.rules"
 install -m 0644 "$DIR/configs/90-nvidia-screen-G05.conf"    "$BUILD/usr/share/X11/xorg.conf.d/90-nvidia-screen-G05.conf"
+# Plantilla de supergfxd.conf (el postinst la usa para crear/parchear /etc/supergfxd.conf)
+install -m 0644 "$DIR/configs/supergfxd.conf"              "$BUILD/usr/share/asusd-supergfxd-installer/supergfxd.conf"
 
 # ── Datos de aplicación ───────────────────────────────────────────────────────
 echo "[4/6] Copiando datos de aplicación..."
@@ -88,11 +91,40 @@ EOF
 cat > "$BUILD/DEBIAN/postinst" <<'EOF'
 #!/bin/bash
 set -e
+
+# ── supergfxd: forzar hotplug_type=Asus (sin esto, Integrated cuelga el daemon) ──
+SGX_CONF="/etc/supergfxd.conf"
+SGX_TPL="/usr/share/asusd-supergfxd-installer/supergfxd.conf"
+if [ ! -f "$SGX_CONF" ]; then
+    install -D -m 0644 "$SGX_TPL" "$SGX_CONF"
+elif ! grep -q '"hotplug_type"[[:space:]]*:[[:space:]]*"Asus"' "$SGX_CONF"; then
+    cp -a "$SGX_CONF" "$SGX_CONF.bak"
+    if command -v python3 >/dev/null 2>&1; then
+        python3 - "$SGX_CONF" <<'PY'
+import json, sys
+p = sys.argv[1]
+with open(p) as f:
+    d = json.load(f)
+d["hotplug_type"] = "Asus"
+with open(p, "w") as f:
+    json.dump(d, f, indent=2)
+    f.write("\n")
+PY
+    elif grep -q '"hotplug_type"' "$SGX_CONF"; then
+        sed -i -E 's/("hotplug_type"[[:space:]]*:[[:space:]]*)"[^"]*"/\1"Asus"/' "$SGX_CONF"
+    else
+        sed -i -E 's/^(\s*)\}/  ,"hotplug_type": "Asus"\n\}/' "$SGX_CONF"
+    fi
+fi
+
 systemctl daemon-reload
+# Limpia el limitador de reinicios (evita "Start request repeated too quickly" en reinstalaciones)
+systemctl reset-failed supergfxd.service asusd.service 2>/dev/null || true
 systemctl enable --now supergfxd.service
 systemctl start asusd.service || true
 udevadm control --reload-rules
 gtk-update-icon-cache -f /usr/share/icons/hicolor 2>/dev/null || true
+echo "NOTA: si se cambió hotplug_type, reinicia para que Integrated funcione sin colgarse."
 EOF
 chmod 0755 "$BUILD/DEBIAN/postinst"
 
