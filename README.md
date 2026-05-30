@@ -87,19 +87,33 @@ Kernel mínimo:
 
 ## Instalación
 
+### Opción A — Paquete .deb (recomendado, Debian/Ubuntu)
+
+```bash
+sudo apt install ./asusd-supergfxd-installer_6.3.7_amd64.deb
+```
+
+Instala todo de una vez (binarios, servicios, GPU Mode Selector y la configuración con el fix de `hotplug_type=Asus`). Para desinstalar limpio: `sudo apt remove asusd-supergfxd-installer`.
+
+> ⚠️ Si la instalación cambia `hotplug_type` en `/etc/supergfxd.conf`, **reinicia** para que el modo Integrated funcione sin colgar el daemon (ver [Solución de problemas](#supergfxd-se-cuelga-al-cambiar-a-integrated)).
+
+### Opción B — Script manual (cualquier distro con systemd)
+
 ```bash
 chmod +x instalar.sh
 ./instalar.sh
 ```
 
-El script realiza 6 pasos automáticamente:
+El script realiza 8 pasos automáticamente:
 
 1. Instala los binarios del sistema en `/usr/bin/`
 2. Instala los servicios systemd
 3. Instala las reglas udev y permisos D-Bus
 4. Instala los datos de aplicación (layouts RGB, AniMatrix)
-5. Instala ROG Control Center con entrada en el menú del sistema
-6. Habilita e inicia los servicios
+5. Instala el **GPU Mode Selector** (`/usr/local/bin/gpu-mode.sh`, lanzador en el menú y regla sudoers NOPASSWD)
+6. Instala ROG Control Center con entrada en el menú del sistema
+7. Configura `/etc/supergfxd.conf` forzando `hotplug_type=Asus` (con backup si ya existía)
+8. Habilita e inicia los servicios
 
 ---
 
@@ -108,6 +122,10 @@ El script realiza 6 pasos automáticamente:
 ```
 asusd-supergfxd-installer/
 ├── instalar.sh             ← script de instalación automática
+├── desinstalar.sh          ← script de desinstalación (detecta .deb o instalación manual)
+├── build_deb.sh            ← genera el paquete .deb
+├── gpu-mode.sh             ← GPU Mode Selector (menú interactivo de modo GPU)
+├── asusd-supergfxd-installer_6.3.7_amd64.deb  ← paquete precompilado
 ├── binarios/               ← ejecutables precompilados (x86_64)
 │   ├── asusd               daemon principal ASUS
 │   ├── asusctl             CLI para controlar asusd
@@ -125,7 +143,8 @@ asusd-supergfxd-installer/
 │   ├── org.supergfxctl.Daemon.conf   permisos D-Bus para supergfxd
 │   ├── asusd.rules                   regla udev (auto-inicia asusd)
 │   ├── 90-supergfxd-nvidia-pm.rules  power management NVIDIA
-│   └── 90-nvidia-screen-G05.conf     xorg config para ASUS
+│   ├── 90-nvidia-screen-G05.conf     xorg config para ASUS
+│   └── supergfxd.conf                plantilla (mode=Hybrid + hotplug_type=Asus)
 ├── datos/                  ← datos de aplicación
 │   ├── aura_support.ron    layouts de teclados RGB soportados
 │   └── anime/              animaciones para pantalla AniMatrix
@@ -144,13 +163,23 @@ asusd-supergfxd-installer/
 rog-control-center
 ```
 
-### GPU switching
+### GPU Mode Selector (menú interactivo)
+
+Forma más sencilla de cambiar de modo GPU. Busca **"GPU Mode Selector"** en el menú de aplicaciones, o desde terminal:
+
+```bash
+sudo gpu-mode.sh
+```
+
+Muestra el modo actual y deja elegir entre Integrated / Hybrid / AsusMuxDgpu. Usa `timeout` en todas las llamadas a `supergfxctl` (para que un cuelgue del daemon nunca congele la ventana) y reinicia automáticamente tras aplicar el cambio (cancelable con Ctrl+C).
+
+### GPU switching (manual)
 
 ```bash
 supergfxctl -g                       # ver modo actual
 supergfxctl -m Integrated            # solo Intel (máxima batería)
 supergfxctl -m Hybrid                # Intel + NVIDIA on-demand (recomendado)
-supergfxctl -m NvidiaNoModeset       # NVIDIA exclusivo (máximo rendimiento)
+supergfxctl -m AsusMuxDgpu           # NVIDIA exclusivo (máximo rendimiento)
 ```
 
 ### Perfiles de rendimiento
@@ -201,15 +230,19 @@ cd ../..
 
 ## Desinstalar
 
+El script `desinstalar.sh` detecta automáticamente si instalaste por `.deb` o manualmente y limpia todo (binarios, servicios, GPU Mode Selector, sudoers y `/etc/supergfxd.conf`):
+
 ```bash
-sudo rm /usr/bin/{asusd,asusctl,asusd-user,asus-shutdown,rog-control-center,supergfxd,supergfxctl}
-sudo rm /usr/lib/systemd/system/{asusd,asus-shutdown,supergfxd}.service
-sudo rm /usr/lib/udev/rules.d/{99-asusd,90-supergfxd-nvidia-pm}.rules
-sudo rm /usr/share/dbus-1/system.d/{asusd.conf,org.supergfxctl.Daemon.conf}
-sudo rm /usr/share/applications/rog-control-center.desktop
-sudo rm -rf /usr/share/asusd
-sudo systemctl daemon-reload
+./desinstalar.sh
 ```
+
+Si instalaste por `.deb` también puedes usar directamente:
+
+```bash
+sudo apt remove asusd-supergfxd-installer
+```
+
+> Tu configuración en `/etc/asusd/` y los drivers NVIDIA no se modifican.
 
 ---
 
@@ -230,9 +263,24 @@ sudo systemctl enable supergfxd.service
 sudo systemctl start supergfxd.service
 ```
 
+### supergfxd se cuelga al cambiar a Integrated
+
+**Síntoma:** al pasar a modo Integrated, `supergfxctl` se queda colgado (cualquier comando, incluso `-g`, no responde) y el daemon queda atascado en el kernel desvinculando la NVIDIA (no muere ni con `SIGKILL`).
+
+**Causa:** `/etc/supergfxd.conf` sin `"hotplug_type": "Asus"`. Sin ese valor, el daemon intenta desvincular la dGPU de forma incompatible con las laptops ASUS y se clava.
+
+**Solución:** asegúrate de que `/etc/supergfxd.conf` tenga `hotplug_type` en `Asus` y **reinicia**:
+
+```bash
+grep hotplug_type /etc/supergfxd.conf   # debe mostrar "Asus"
+sudo reboot
+```
+
+El instalador (`.deb` y `instalar.sh`) ya aplica este valor automáticamente. El **GPU Mode Selector** además protege con `timeout` para que un cuelgue nunca congele la ventana.
+
 ### Pantalla negra después de cambiar GPU
 
-Desde Live USB, restaurar modo Integrated:
+Desde Live USB, restaurar un modo seguro (Hybrid + hotplug Asus):
 
 ```bash
 sudo mount /dev/nvme0n1p5 /mnt
@@ -241,8 +289,8 @@ sudo mount --bind /proc /mnt/proc
 sudo mount --bind /sys /mnt/sys
 sudo chroot /mnt
 
-cat > /etc/asusd/supergfxd.conf << 'EOF'
-{"mode":"Integrated","vfio_enable":false,"vfio_save":false,"always_reboot":false,"no_logind":false,"logout_timeout_s":180}
+cat > /etc/supergfxd.conf << 'EOF'
+{"mode":"Hybrid","vfio_enable":false,"vfio_save":false,"always_reboot":false,"no_logind":true,"logout_timeout_s":180,"hotplug_type":"Asus"}
 EOF
 
 exit && sudo reboot
